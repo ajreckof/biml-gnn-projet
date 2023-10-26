@@ -1,4 +1,3 @@
-from torch_geometric.nn.conv import GCNConv
 import torch
 
 class Decoder(torch.nn.Module):
@@ -17,7 +16,7 @@ class Decoder(torch.nn.Module):
         # print(x.shape)
         # print("----")
         if sigmoid:
-            return self.sig(x)
+            return self.sig(x).squeeze()
         else:
             return x
 
