@@ -12,7 +12,7 @@ class Decoder(torch.nn.Module):
         # print(x.shape)
         x = torch.cat([x[edge_index[0]], x[edge_index[1]]], dim=1)
         x = self.linear1(x).relu()
-        x = self.linear2(x).relu()
+        x = self.linear2(x)
         # print(x.shape)
         # print("----")
         if sigmoid:
