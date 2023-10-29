@@ -43,9 +43,10 @@ torch_geometric.transforms.RandomLinkSplit(is_undirected=True, split_labels=True
 \end{verbatim}
 Cette méthode nous permet de générer des jeux d’entraînement et de test de liens existants dans les données d'origine (liens positifs) et non existants dans les données d'origine (liens négatifs). Elle nous permet aussi de définir que ces liens sont non orientés et que donc pour chaque paire d’indices formant le lien, le premier indice est inférieur au deuxième.
 Nous avons opté pour l'utilisation de l'optimiseur Adam avec un taux d'apprentissage de 0,01 et un terme de régularisation (\texttt{weight\_decay}) de \(5e^{-4}\).
+Tout les modèles présent auront une taille de sortie de l'espace latent de 32. 
 
 \section{Étude du dropout}
-Nous avons essayé d'améliorer le modèle VGAE en y incorporant une couche de dropout entre la première et la deuxième couche. Nous avons laissé la valeur de dropout à la valeur par défaut soit 0.5. LEs modèles ont été entrainé sur 2000 épochs
+Nous avons essayé d'améliorer le modèle VGAE en y incorporant une couche de dropout entre la première et la deuxième couche. Nous avons laissé la valeur de dropout à la valeur par défaut soit 0.5. LEs modèles ont été entrainé sur 2000 épochs. Ce processus a été répété 60 fois pour obtenir des statistiques sur l'apprentissage.
 
 \includegraphics[width=100pt]{"../output2.svg.pdf"}
 \begin{tabular}{|c|*{2}{c:c|}} 
