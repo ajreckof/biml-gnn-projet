@@ -44,7 +44,11 @@ torch_geometric.transforms.RandomLinkSplit(is_undirected=True, split_labels=True
 \end{verbatim}
 Cette méthode nous permet de générer des jeux d’entraînement et de test de liens existants dans les données d'origine (liens positifs) et non existants dans les données d'origine (liens négatifs). Elle nous permet aussi de définir que ces liens sont non orientés et que donc pour chaque paire d’indices formant le lien, le premier indice est inférieur au deuxième.
 Nous avons opté pour l'utilisation de l'optimiseur Adam avec un taux d'apprentissage de 0,01 et un terme de régularisation (\texttt{weight\_decay}) de \(5e^{-4}\).
-Tout les modèles présent auront une taille de sortie de l'espace latent de 32. 
+Tout les modèles présent auront une taille de sortie de l'espace latent de 32.
+
+Dans l'ensemble de nos expérimentations, nous fournissons aux modèles de prédiction des données comprenant la latitude, la longitude et le pays (converti en un code numérique). En plus de cela, nous avons décidé d'explorer l'ajout de l'information sur le degré de chaque nœud et de comparer les résultats.
+Les degrés des nœuds sont déterminés en utilisant notre connaissance du graphe réel. Cependant, lorsque nous envisageons d'intégrer un nouvel aéroport à notre base de données, il devient envisageable d'estimer le degré potentiel du nœud associé à cet aéroport en se basant sur les flux d'arrivées et de départs des avions de cet aéroport. Ainsi, la réalisation de ce test nous semble pertinente et justifiée.
+
 
 \section{Étude du dropout}
 Nous avons essayé d'améliorer le modèle VGAE en y incorporant une couche de dropout entre la première et la deuxième couche. 
@@ -113,13 +117,11 @@ Nous effectuons les prédictions en utilisant les données de latitude, longitud
         VGAE avec décodeur & 0.97 & 0.96\\
         \hline
     \end{tabular}
-    \caption{Performance du décodeur en moyenne sur 10 au bout de 1000 époques}
+    \caption{Performance du décodeur en moyenne sur 10 au bout de 1000 époques \ref{fig:fig_AUC} \ref{fig:fig_AP}}
     \label{tab:performance_decodeur}
 \end{table}
 
 \subsection{Performance avec le degré}
-
-Les degrés de chaque nœud sont établis grâce à notre connaissance du graphe réel. Cependant, lorsque nous envisageons d'ajouter un nouvel aéroport à notre base de données, il devient envisageable d'estimer le degré potentiel du nœud associé à cet aéroport en se basant sur les flux d'arrivées et de départs des avions de cet aéroport. Par conséquent, la réalisation de ce test ne nous semble pas inappropriée.
 
 \begin{table}[H]
     \centering
@@ -136,7 +138,7 @@ Les degrés de chaque nœud sont établis grâce à notre connaissance du graphe
         VGAE avec décodeur & 0.97 & 0.96\\
         \hline
     \end{tabular}
-    \caption{Performance du décodeur en moyenne sur 10 au bout de 1000 époques avec le degré de chaque nœud}
+    \caption{Performance du décodeur en moyenne sur 10 au bout de 1000 époques avec le degré de chaque nœud \ref{fig:fig_AUC_avec_degre} \ref{fig:fig_AP_avec_degre}}
     \label{tab:performance_decodeur_avec_degre}
 \end{table}
 
@@ -188,7 +190,7 @@ Les liens en vert sont les liens manqués.
         VGAE avec décodeur & 12199 & 90.0\% & 1348 & 10\% & 1348 & 10\% & 13546\\
          \hline
     \end{tabular}
-    \caption{Résultats de prédictions}
+    \caption{Résultats de prédictions \ref{fig:fig_graphe_GAE} \ref{fig:fig_graphe_GAE_with_decodeur} \ref{fig:fig_graphe_VGAE} \ref{fig:fig_graphe_VGAE_with_decodeur}}
     \label{tab:resultats_reconstruction}
 \end{table}
 
@@ -235,5 +237,69 @@ Nous pouvons constater que tous les modèles obtiennent de meilleures performanc
 
 \section{Ablation study}
 
+\section{Annexes}
+
+\subsection{Performance}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{../test_performance/sans_degre_0dropout/AUC.png}
+    \caption{AUC des modèles au cours des époques}
+    \label{fig:fig_AUC}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{../test_performance/sans_degre_0dropout/AP.png}
+    \caption{AP des modèles au cours des époques}
+    \label{fig:fig_AP}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{../test_performance/avec_degre_0dropout/AUC.png}
+    \caption{AUC des modèles au cours des époques en tenant compte du degré de nœuds}
+    \label{fig:fig_AUC_avec_degre}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{../test_performance/avec_degre_0dropout/AP.png}
+    \caption{AP des modèles au cours des époques en tenant compte du degré de nœuds}
+    \label{fig:fig_AP_avec_degre}
+\end{figure}
+
+\subsection{Reconstruction de graphe}
+
+Les liens en noir sont les liens correctement prédis.\newline
+Les liens en rouge sont les liens faussement prédis.\newline
+Les liens en vert sont les liens manqués.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{../GCN.png}
+    \caption{Reconstruction du graphe avec le GAE}
+    \label{fig:fig_graphe_GAE}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{../GCNwithDecoder.png}
+    \caption{Reconstruction du graphe avec le GAE muni de notre décodeur}
+    \label{fig:fig_graphe_GAE_with_decodeur}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{../withoutDecoder.png}
+    \caption{Reconstruction du graphe avec le VGAE}
+    \label{fig:fig_graphe_VGAE}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{../withDecoder.png}
+    \caption{Reconstruction du graphe avec le VGAE muni de notre décodeur}
+    \label{fig:fig_graphe_VGAE_with_decodeur}
+\end{figure}
 
 \end{document}
