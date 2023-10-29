@@ -6,6 +6,7 @@
 \usepackage{url}
 \usepackage{amsfonts} 
 \usepackage[margin=0.7in]{geometry}
+\usepackage{float}
 
 
 \allowdisplaybreaks
@@ -26,24 +27,79 @@
 \section*{Abstract}
 \newpage
 \section{Performance de décodeur}
-
-
-\section{Reproduction de graphe}
 \subsection{Méthode}
-Nous avons souhaitez tester nos modèles de manière plus visuelle, en cherchant à reconstruire un graphe des lignes de vols d’avions entre les différents aéroports du dataset. Pour ce faire nous avons décider d’utiliser la méthode :
+
+Dans le cadre de ce projet, nous avons décidé de développer notre propre décodeur pour la prédiction de liens. Ce décodeur est composé de deux couches linéaires séparées par une fonction d'activation ReLU. Pour évaluer son efficacité, nous avons mis en place deux modèles :
+\begin{itemize}
+    \item Un VGAE (Variational Graph Autoencoder) avec un encodeur composé d'une couche GCNConv suivie de deux couches GCNConv pour encoder la moyenne et l'écart type dans l'espace latent.
+    \item Un GAE (Graph Autoencoder) composé d'une seule couche GCNConv.
+\end{itemize}
+Nous testons notre décodeur sur ces deux modèles en comparant les performances avec et sans l'ajout du décodeur. \newline
+Pour la préparation des données nous utilisons la méthode suivante :
 \begin{verbatim}
 torch_geometric.transforms.RandomLinkSplit(is_undirected=True, split_labels=True, num_val=0)
 \end{verbatim}
-Cette méthode nous permet de générer des jeux d’entrainement et de test de liens existant dans les données d’origine (liens positifs) et non existant dans les données d’origine (liens négatifs). Elle nous permet aussi de définir que ces liens sont non-orienté et que donc pour chaque pair d’indices, formant le lien, le premier indice est inférieur au deuxième. Nous avons entrainé nos modèles sur une base de liens positifs d’entrainement et nous avons tracé les cartes en encodant les mêmes liens positifs d’entrainement et en décodant un ensemble mélangé de tous les liens de notre jeu de données d’origine et autant de lien négatifs. On note ensuite le nombre de liens correctement prédis, le nombre de liens faussement prédis (qui n’existent pas dans nos données), le nombre de liens manqués (qui existent dans nos données mais qui ont été rejetés par le modèle) et le nombre de liens totaux rejetés.\newline
+Cette méthode nous permet de générer des jeux d’entraînement et de test de liens existants dans les données d'origine (liens positifs) et non existants dans les données d'origine (liens négatifs). Elle nous permet aussi de définir que ces liens sont non orientés et que donc pour chaque paire d’indices formant le lien, le premier indice est inférieur au deuxième.
+Nous avons opté pour l'utilisation de l'optimiseur Adam avec un taux d'apprentissage de 0,01 et un terme de régularisation (\texttt{weight\_decay}) de \(5e^{-4}\).
+
+\subsection{Performance}
+
+Nous effectuons les prédictions en utilisant les données de latitude, longitude et pays de chaque nœud. Les modèles sont entraînés sur 1000 époques, et ce processus est répété 10 fois pour obtenir une moyenne des performances par époque. Tous les modèles partagent des hyperparamètres équivalents : les encodeurs produisent des vecteurs de 32 valeurs. On trace ensuite l'AUC et l'AP calculées à chaque époque pour chaque modèle.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c|c|}
+        \hline
+        Modèle & AUC & AP\\
+        \hline
+        GAE & 0.72 & 0.64\\
+        \hline
+        GAE avec décodeur & 0.94 & 0.93\\
+        \hline
+        VGAE & 0.83 & 0.75\\
+        \hline
+        VGAE avec décodeur & 0.97 & 0.96\\
+        \hline
+    \end{tabular}
+    \caption{Performance du décodeur en moyenne sur 10 au bout de 1000 époques}
+    \label{tab:performance_decodeur}
+\end{table}
+
+\subsection{Performance avec le degré}
+
+Les degrés de chaque nœud sont établis grâce à notre connaissance du graphe réel. Cependant, lorsque nous envisageons d'ajouter un nouvel aéroport à notre base de données, il devient envisageable d'estimer le degré potentiel du nœud associé à cet aéroport en se basant sur les flux d'arrivées et de départs des avions de cet aéroport. Par conséquent, la réalisation de ce test ne nous semble pas inappropriée.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c|c|}
+        \hline
+        Modèle & AUC & AP\\
+        \hline
+        GAE & 0.74 & 0.66\\
+        \hline
+        GAE avec décodeur & 0.97 & 0.97\\
+        \hline
+        VGAE & 0.78 & 0.70\\
+        \hline
+        VGAE avec décodeur & 0.97 & 0.96\\
+        \hline
+    \end{tabular}
+    \caption{Performance du décodeur en moyenne sur 10 au bout de 1000 époques avec le degré de chaque nœud}
+    \label{tab:performance_decodeur_avec_degre}
+\end{table}
+
+\section{Reconstruction de graphe}
+\subsection{Méthode}
+Nous avons choisi de tester nos modèles d'une manière plus visuelle, en cherchant à reconstruire un graphique représentant les liaisons aériennes entre les différents aéroports de notre ensemble de données. Pour ce faire, nous avons suivi une préparation des données similaire à celle décrite dans la section précédente. Nous avons ensuite entraîné nos modèles en utilisant une base de liens positifs pour l'entraînement. Par la suite, nous avons généré des graphiques en encodant les mêmes liens positifs et en décodant un ensemble de liens provenant de l'ensemble de données d'origine, ainsi qu'un nombre équivalent de liens négatifs. Nous avons ensuite enregistré plusieurs métriques, notamment le nombre de liens correctement prédits, le nombre de liens faussement prédits (qui n'existent pas dans nos données), le nombre de liens manqués (qui existent dans nos données mais ont été rejetés par le modèle), et le nombre total de liens rejetés.
 Nous avons utilisés 4 modèles :
 \begin{itemize}
-    \item un GAE avec un encodeur formé d’une seule couche de convolution
-    \item un VGAE sans notre décodeur
-    \item un VGAE avec notre décodeur
-    \item un même GAE mais avec notre décodeur
+    \item un GAE avec un encodeur formé d’une seule couche de convolution.
+    \item un VGAE sans notre décodeur.
+    \item un VGAE avec notre décodeur.
+    \item un même GAE mais avec notre décodeur.
 \end{itemize}
 
-Chaque modèle à été testé sur un total de 27093 liens possibles avec 13547 liens positifs et 13546 liens négatifs. L’objectif était de couper ce jeu de liens en deux en conservant les liens les plus plausibles pour le modèle. Pour ce faire, chaque modèle donne un score entre 0 et 1 à chacun des 27093 liens. Ensuite via la méthode : \texttt{torch.quantile(z, 0.5)}, on détermine un seuil de score pour ne garder si possible que les 13546±1 liens ayant un score supérieur au seuil. Ce seront ces liens qui seront considérés comme prédis positivement par le modèle. Dans nos résultats, les pourcentages associés aux liens correctes et faux sont basés sur le nombre de liens considérés positifs par le modèle (Corrects + Faux) et le pourcentage de manqués sur le total de liens positifs réels (13547).
+Chaque modèle a été testé sur un total de 27 093 liens possibles, comprenant 13 547 liens positifs et 13 546 liens négatifs. L'objectif était de couper ce jeu de liens en deux en conservant les liens les plus plausibles pour le modèle. Pour ce faire, chaque modèle attribue un score entre 0 et 1 à chacun des 27 093 liens. Ensuite, à l'aide de la méthode \texttt{torch.quantile(z, 0.5)}, nous déterminons un seuil de score pour ne conserver que les 13 546 ± 1 liens ayant un score supérieur au seuil. Ce sont ces liens qui seront considérés comme prédis positivement par le modèle. Dans nos résultats, les pourcentages associés aux liens corrects et faux sont basés sur le nombre de liens considérés positifs par le modèle (Corrects + Faux) et le pourcentage de liens manqués par rapport au total de liens positifs réels (13 547).
 La prédiction est faite sur les données de \textbf{latitude}, \textbf{longitude},  et \textbf{pays} de chaque nœud.\newline
 \newline
 Les liens en noir sont les liens correctement prédis.\newline
@@ -51,204 +107,77 @@ Les liens en rouge sont les liens faussement prédis.\newline
 Les liens en vert sont les liens manqués.
 
 \subsection{Résultats}
-\subsubsection{GAE sans notre décodeur}
 
-\begin{table}
+\begin{table}[H]
     \centering
     \begin{tabular}{|c|c|c|c|c|c|}
         \hline
-        Statistiques scores & Min & Max & Moyenne & Écart type & Seuil\\
+        Modèle & Min & Max & Moyenne & Écart type & Seuil\\
         \hline
-         & 0 & 1 & 0.75929 & 0.42746 & 1 \\
-         \hline
-    \end{tabular}
-    \begin{tabular}{|c|c|c|c|c|c|}
-        \hline
-        Résultats & Total & Corrects & Faux & Manqués & Rejetés\\
-        \hline
-         & 27093 & 13298 & 7257 & 249 & 6538\\
-        \hline
-         &  & 64.7\% & 35.3\% & 1.84\% & \\
+        GAE & 0 & 1 & 0.75929 & 0.42746 & 1\\
+        VGAE & 0 & 1 & 0.71422 & 0.45044 & 1\\
+        GAE avec décodeur & 0 & 0.99980 & 0.49157 & 0.39727 & 0.54739\\
+        VGAE avec décodeur & 0 & 1 & 0.56486 & 0.42113 & 0.75337\\
         \hline
     \end{tabular}
-    \caption{Résultats pour le GAE sans notre décodeur}
-    \label{tab:my_label}
+    \caption{Statistiques des scores établies par les modèles}
+    \label{tab:statistiques_scores}
 \end{table}
 
-On voit que ce modèle n’a manqué que 2.27\% des liens réellement positifs. On observe néanmoins que ce modèle ne marque pas assez la différence entre des liens possiblement positifs et des liens certainement positifs selon lui, il est impossible de les discernés et donc le nombre de liens rejetés est plus bas que le nombre attendu. Pour obtenir un aussi bon score en liens manqués ce modèle à pour cela accepté une très large majorité des liens et donc à produit beaucoup de faux positifs.
-
-\subsubsection{VGAE sans notre décodeur}
-
-\begin{table}
+\begin{table}[H]
     \centering
-    \begin{tabular}{|c|c|c|c|c|c|}
+    \begin{tabular}{|c|c|c|c|c|c|c|c|}
         \hline
-        Statistiques scores & Min & Max & Moyenne & Écart type & Seuil\\
+        Modèle & \multicolumn{2}{c|}{Corrects} & \multicolumn{2}{c|}{Faux} & \multicolumn{2}{c|}{Manqués} & Rejetés\\
         \hline
-         & 0 & 1 & 0.71422 & 0.45044 & 1 \\
+        GAE & 13298 & 64.7\% & 7257 & 35.3\% & 249 & 1.84\% & 6538\\
+        VGAE & 13381 & 71.0\% & 5473 & 29.0\% & 166 & 1.23\% & 8239\\
+        GAE avec décodeur & 11804 & 87.1\% & 1743 & 12.9\% & 1743 & 12.9\% & 13546\\
+        VGAE avec décodeur & 12199 & 90.0\% & 1348 & 10\% & 1348 & 10\% & 13546\\
          \hline
     \end{tabular}
-    \begin{tabular}{|c|c|c|c|c|c|}
-        \hline
-        Résultats & Total & Corrects & Faux & Manqués & Rejetés\\
-        \hline
-         & 27093 & 13381 & 5473 & 166 & 8239\\
-        \hline
-         &  & 71.0\% & 29.0\% & 1.23\% & \\
-        \hline
-    \end{tabular}
-    \caption{Résultats pour le VGAE sans notre décodeur}
-    \label{tab:my_label}
-\end{table}
-Tout comme le modèle précédent celui-ci à une difficulté à différencier des liens certainement positifs de liens possiblement positifs.
-
-\subsubsection{GAE avec notre décodeur}
-
-\begin{table}
-    \centering
-    \begin{tabular}{|c|c|c|c|c|c|}
-        \hline
-        Statistiques scores & Min & Max & Moyenne & Écart type & Seuil\\
-        \hline
-         & 0 & 0.99980 & 0.49157 & 0.39727 & 0.54739 \\
-         \hline
-    \end{tabular}
-    \begin{tabular}{|c|c|c|c|c|c|}
-        \hline
-        Résultats & Total & Corrects & Faux & Manqués & Rejetés\\
-        \hline
-         & 27093 & 11804 & 1743 & 1743 & 13546\\
-        \hline
-         &  & 87.1\% & 12.9\% & 12.9\% & \\
-        \hline
-    \end{tabular}
-    \caption{Résultats pour le GAE avec notre décodeur}
-    \label{tab:my_label}
+    \caption{Résultats de prédictions}
+    \label{tab:resultats_reconstruction}
 \end{table}
 
-\subsubsection{VGAE avec notre décodeur}
-
-\begin{table}
-    \centering
-    \begin{tabular}{|c|c|c|c|c|c|}
-        \hline
-        Statistiques scores & Min & Max & Moyenne & Écart type & Seuil\\
-        \hline
-         & 0 & 1 & 0.56486 & 0.42113 & 0.75337 \\
-         \hline
-    \end{tabular}
-    \begin{tabular}{|c|c|c|c|c|c|}
-        \hline
-        Résultats & Total & Corrects & Faux & Manqués & Rejetés\\
-        \hline
-         & 27093 & 12199 & 1348 & 1348 & 13546\\
-        \hline
-         &  & 90.0\% & 10\% & 10\% & \\
-        \hline
-    \end{tabular}
-    \caption{Résultats pour le VGAE avec notre décodeur}
-    \label{tab:my_label}
-\end{table}
+Il est notable que les modèles sans décodeur ont manqué beaucoup moins de liens par rapport aux modèles avec décodeur. Cependant, cette amélioration s'accompagne d'une plus grande acceptation de faux liens qui auraient dû être rejetés. Cette tendance s'explique en partie par la manière dont ces modèles attribuent des scores, sans faire de distinction nette entre les liens potentiellement positifs et les liens considérés comme certainement positifs.
 
 \subsection{Résultats bis}
-Lors de nos tests, nous avons exploré l'incorporation des degrés de chaque nœud pour la prédiction de liens. Les degrés de chaque nœud sont connus puisque nous disposons déjà du graphe réel. Cependant, dans le cas de l'ajout d'un nouvel aéroport à la base de données, il est envisageable d'estimer le degré potentiel de son nœud associé en se basant sur les flux entrants et sortants des avions de cet aéroport.
+Lors de nos tests, nous avons exploré l'incorporation des degrés de chaque nœud pour la prédiction de liens. Nous avons alors cherché à tester de manière plus visuelle nos modèles.
 
-\subsubsection{GAE sans notre décodeur}
-
-\begin{table}
+\begin{table}[H]
     \centering
     \begin{tabular}{|c|c|c|c|c|c|}
         \hline
-        Statistiques scores & Min & Max & Moyenne & Écart type & Seuil\\
+        Modèle & Min & Max & Moyenne & Écart type & Seuil\\
         \hline
-         & 0 & 1 & 0.73815 & 0.43963 & 1 \\
-         \hline
-    \end{tabular}
-    \begin{tabular}{|c|c|c|c|c|c|}
-        \hline
-        Résultats & Total & Corrects & Faux & Manqués & Rejetés\\
-        \hline
-         & 27093 & 13239 & 6745 & 308 & 6797\\
-        \hline
-         &  & 66.2\% & 33.8\% & 2.27\% & \\
+        GAE & 0 & 1 & 0.73815 & 0.43963 & 1\\
+        VGAE & 0 & 1 & 0.75625 & 0.41074 & 1\\
+        GAE avec décodeur & 0 & 1 & 0.49266 & 0.45323 & 0.5414\\
+        VGAE avec décodeur & 0 & 1 & 0.51289 & 0.43108 & 0.5917\\
         \hline
     \end{tabular}
-    \caption{Résultats pour le GAE sans notre décodeur}
-    \label{tab:my_label}
+    \caption{Statistiques des scores établies par les modèles en tenant compte du degré des nœuds}
+    \label{tab:statistiques_scores_avec_degre}
 \end{table}
 
-\subsubsection{VGAE sans notre décodeur}
-
-\begin{table}
+\begin{table}[H]
     \centering
-    \begin{tabular}{|c|c|c|c|c|c|}
+    \begin{tabular}{|c|c|c|c|c|c|c|c|}
         \hline
-        Statistiques scores & Min & Max & Moyenne & Écart type & Seuil\\
+        Modèle & \multicolumn{2}{c|}{Corrects} & \multicolumn{2}{c|}{Faux} & \multicolumn{2}{c|}{Manqués} & Rejetés\\
         \hline
-         & 0 & 1 & 0.75625 & 0.41074 & 1 \\
+        GAE & 13239 & 66.2\% & 6745 & 33.8\% & 308 & 2.27\% & 6797\\
+        VGAE & 11665 & 74.5\% & 3995 & 25.5\% & 1882 & 13.9\% & 11427\\
+        GAE avec décodeur & 12695 & 93.7\% & 852 & 6.3\% & 852 & 6.3\% & 12695\\
+        VGAE avec décodeur & 12535 & 92.5\% & 1011 & 7.5\% & 1012 & 7.5\% & 13547\\
          \hline
     \end{tabular}
-    \begin{tabular}{|c|c|c|c|c|c|}
-        \hline
-        Résultats & Total & Corrects & Faux & Manqués & Rejetés\\
-        \hline
-         & 27093 & 11665 & 3995 & 1882 & 11427\\
-        \hline
-         &  & 74.5\% & 25.5\% & 13.9\% & \\
-        \hline
-    \end{tabular}
-    \caption{Résultats pour le VGAE sans notre décodeur}
-    \label{tab:my_label}
+    \caption{Résultats de prédictions en tenant compte du degré des nœuds}
+    \label{tab:resultats_reconstruction_avec_degre}
 \end{table}
 
-\subsubsection{GAE avec notre décodeur}
-
-\begin{table}
-    \centering
-    \begin{tabular}{|c|c|c|c|c|c|}
-        \hline
-        Statistiques scores & Min & Max & Moyenne & Écart type & Seuil\\
-        \hline
-         & 0 & 1 & 0.49266 & 0.45323 & 0.5414 \\
-         \hline
-    \end{tabular}
-    \begin{tabular}{|c|c|c|c|c|c|}
-        \hline
-        Résultats & Total & Corrects & Faux & Manqués & Rejetés\\
-        \hline
-         & 27093 & 12695 & 852 & 852 & 12695\\
-        \hline
-         &  & 93.7\% & 6.3\% & 6.3\% & \\
-        \hline
-    \end{tabular}
-    \caption{Résultats pour le GAE avec notre décodeur}
-    \label{tab:my_label}
-\end{table}
-
-\subsubsection{VGAE avec notre décodeur}
-
-\begin{table}
-    \centering
-    \begin{tabular}{|c|c|c|c|c|c|}
-        \hline
-        Statistiques scores & Min & Max & Moyenne & Écart type & Seuil\\
-        \hline
-         & 0 & 1 & 0.51289 & 0.43108 & 0.5917 \\
-         \hline
-    \end{tabular}
-    \begin{tabular}{|c|c|c|c|c|c|}
-        \hline
-        Résultats & Total & Corrects & Faux & Manqués & Rejetés\\
-        \hline
-         & 27093 & 12535 & 1011 & 1012 & 13547\\
-        \hline
-         &  & 92.5\% & 7.5\% & 7.5\% & \\
-        \hline
-    \end{tabular}
-    \caption{Résultats pour le VGAE avec notre décodeur}
-    \label{tab:my_label}
-\end{table}
-
+Nous pouvons constater que tous les modèles obtiennent de meilleures performances lorsque le degré des nœuds est pris en compte. Notamment, dans ce contexte, le modèle GAE avec décodeur surpasse en performance le modèle VGAE avec décodeur.
 
 \section{Étude du dropout}
 
