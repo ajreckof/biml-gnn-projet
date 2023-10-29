@@ -52,41 +52,43 @@ Nous avons laissé la valeur de dropout à la valeur par défaut soit 0.5.
 Les modèles ont été entrainé sur 2000 épochs. 
 Ce processus a été répété 60 fois pour obtenir des statistiques sur l'apprentissage.
 
+
+\begin{tabular}{|c|*{2}{c:c:c|}} 
+    \hline
+    \multirow{2}{*}{modèle} &\multicolumn{3}{|c|}{Sans Degrée} & \multicolumn{3}{|c|}{Avec Degrée} \\
+    \cline{2-7}
+    & \footnotesize{AUC} & \footnotesize{AP} & \footnotesize{temps} &\footnotesize{AUC} & \footnotesize{AP} & \footnotesize{temps} \\
+    \hline
+    VGAE              & .823(0.015) & 75.6\%(2.2\%) & 107.8s(4.9s) & .830(.023) & 75.5\%(2.8\%) & 110.9s(6.2s)\\
+    VGAE with dropout & .785(.017)  & 70.6\%(1.9\%) & 109.3s(5.3s) & .781(.021) & 70.0\%(2.6\%) & 112.0s(9.345)\\
+    \hline
+\end{tabular}
+
 \begin{figure}
+    \centering
     \captionsetup{justification=centering}
-    \begin{subfigure}{0.5\textwidth}
+    \begin{subfigure}{0.45\textwidth}
       \includegraphics[width=\textwidth]{graphics/APs_degree_dropout_cinf.svg.pdf}
       \centering
       \caption{précision moyenne au cours de l'apprentissage\\ avec l'information de degrée}
     \end{subfigure}
-    \begin{subfigure}{0.5\textwidth}
+    \begin{subfigure}{0.45\textwidth}
       \includegraphics[width=\textwidth]{graphics/APs_no_degree_dropout_cinf.svg.pdf}
       \centering
       \caption{précision moyenne au cours de l'apprentissage\\ sans l'information de degrée}
     \end{subfigure}
     
-    \begin{subfigure}{0.5\textwidth}
+    \begin{subfigure}{0.45\textwidth}
       \includegraphics[width=\textwidth]{graphics/AUCs_degree_dropout_cinf.svg.pdf}
       \centering
       \caption{AUC ROC au cours de l'apprentissage\\ avec l'information de degrée}
     \end{subfigure}
-    \begin{subfigure}{0.5\textwidth}
+    \begin{subfigure}{0.45\textwidth}
       \includegraphics[width=\textwidth]{graphics/AUCs_no_degree_dropout_cinf.svg.pdf}
       \centering
       \caption{AUC ROC au cours de l'apprentissage\\ sans l'information de degrée}
     \end{subfigure}
-  \end{figure}
-\includegraphics[width=300pt]{../output2.svg.pdf}
-\begin{tabular}{|c|*{2}{c:c|}} 
-    \hline
-    \multirow{2}{*}{modèle} &\multicolumn{2}{|c|}{Sans Degrée} & \multicolumn{2}{|c|}{Avec Degrée} \\
-    \cline{2-5}
-    & \footnotesize{AUC} & \footnotesize{AP} &\footnotesize{AUC} & \footnotesize{AP} \\
-    \hline
-    VGAE & Data & Data & d& d \\
-    VGAE with dropout & Data & Data & d& d \\
-    \hline
-\end{tabular}
+\end{figure}
 \section{Performance du décodeur}
 
 \section{Test du dropout en présence du décodeur}
