@@ -9,6 +9,7 @@
 \usepackage{float}
 \usepackage{multicol, multirow}
 \usepackage{arydshln}
+\usepackage{subcaption}
 
 
 
@@ -46,9 +47,36 @@ Nous avons opté pour l'utilisation de l'optimiseur Adam avec un taux d'apprenti
 Tout les modèles présent auront une taille de sortie de l'espace latent de 32. 
 
 \section{Étude du dropout}
-Nous avons essayé d'améliorer le modèle VGAE en y incorporant une couche de dropout entre la première et la deuxième couche. Nous avons laissé la valeur de dropout à la valeur par défaut soit 0.5. LEs modèles ont été entrainé sur 2000 épochs. Ce processus a été répété 60 fois pour obtenir des statistiques sur l'apprentissage.
+Nous avons essayé d'améliorer le modèle VGAE en y incorporant une couche de dropout entre la première et la deuxième couche. 
+Nous avons laissé la valeur de dropout à la valeur par défaut soit 0.5. 
+Les modèles ont été entrainé sur 2000 épochs. 
+Ce processus a été répété 60 fois pour obtenir des statistiques sur l'apprentissage.
 
-\includegraphics[width=100pt]{"../output2.svg.pdf"}
+\begin{figure}
+    \captionsetup{justification=centering}
+    \begin{subfigure}{0.5\textwidth}
+      \includegraphics[width=\textwidth]{graphics/APs_degree_dropout_cinf.svg.pdf}
+      \centering
+      \caption{précision moyenne au cours de l'apprentissage\\ avec l'information de degrée}
+    \end{subfigure}
+    \begin{subfigure}{0.5\textwidth}
+      \includegraphics[width=\textwidth]{graphics/APs_no_degree_dropout_cinf.svg.pdf}
+      \centering
+      \caption{précision moyenne au cours de l'apprentissage\\ sans l'information de degrée}
+    \end{subfigure}
+    
+    \begin{subfigure}{0.5\textwidth}
+      \includegraphics[width=\textwidth]{graphics/AUCs_degree_dropout_cinf.svg.pdf}
+      \centering
+      \caption{AUC ROC au cours de l'apprentissage\\ avec l'information de degrée}
+    \end{subfigure}
+    \begin{subfigure}{0.5\textwidth}
+      \includegraphics[width=\textwidth]{graphics/AUCs_no_degree_dropout_cinf.svg.pdf}
+      \centering
+      \caption{AUC ROC au cours de l'apprentissage\\ sans l'information de degrée}
+    \end{subfigure}
+  \end{figure}
+\includegraphics[width=300pt]{../output2.svg.pdf}
 \begin{tabular}{|c|*{2}{c:c|}} 
     \hline
     \multirow{2}{*}{modèle} &\multicolumn{2}{|c|}{Sans Degrée} & \multicolumn{2}{|c|}{Avec Degrée} \\
