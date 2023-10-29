@@ -1,3 +1,10 @@
 __pycache__/*
 .DS_store/*
 .vscode/*
+rapport/rapport.aux
+rapport/rapport.fdb_latexmk
+rapport/rapport.fls
+rapport/rapport.log
+rapport/rapport.out
+rapport/rapport.synctex.gz
+rapport/rapport.toc
