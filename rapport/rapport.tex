@@ -25,7 +25,229 @@
 \tableofcontents
 \section*{Abstract}
 \newpage
-\section{reproduction de graphe}
+\section{Performance de décodeur}
+
+
+\section{Reproduction de graphe}
+\subsection{Méthode}
+Nous avons souhaitez tester nos modèles de manière plus visuelle, en cherchant à reconstruire un graphe des lignes de vols d’avions entre les différents aéroports du dataset. Pour ce faire nous avons décider d’utiliser la méthode :
+\begin{verbatim}
+torch_geometric.transforms.RandomLinkSplit(is_undirected=True, split_labels=True, num_val=0)
+\end{verbatim}
+Cette méthode nous permet de générer des jeux d’entrainement et de test de liens existant dans les données d’origine (liens positifs) et non existant dans les données d’origine (liens négatifs). Elle nous permet aussi de définir que ces liens sont non-orienté et que donc pour chaque pair d’indices, formant le lien, le premier indice est inférieur au deuxième. Nous avons entrainé nos modèles sur une base de liens positifs d’entrainement et nous avons tracé les cartes en encodant les mêmes liens positifs d’entrainement et en décodant un ensemble mélangé de tous les liens de notre jeu de données d’origine et autant de lien négatifs. On note ensuite le nombre de liens correctement prédis, le nombre de liens faussement prédis (qui n’existent pas dans nos données), le nombre de liens manqués (qui existent dans nos données mais qui ont été rejetés par le modèle) et le nombre de liens totaux rejetés.\newline
+Nous avons utilisés 4 modèles :
+\begin{itemize}
+    \item un GAE avec un encodeur formé d’une seule couche de convolution
+    \item un VGAE sans notre décodeur
+    \item un VGAE avec notre décodeur
+    \item un même GAE mais avec notre décodeur
+\end{itemize}
+
+Chaque modèle à été testé sur un total de 27093 liens possibles avec 13547 liens positifs et 13546 liens négatifs. L’objectif était de couper ce jeu de liens en deux en conservant les liens les plus plausibles pour le modèle. Pour ce faire, chaque modèle donne un score entre 0 et 1 à chacun des 27093 liens. Ensuite via la méthode : \texttt{torch.quantile(z, 0.5)}, on détermine un seuil de score pour ne garder si possible que les 13546±1 liens ayant un score supérieur au seuil. Ce seront ces liens qui seront considérés comme prédis positivement par le modèle. Dans nos résultats, les pourcentages associés aux liens correctes et faux sont basés sur le nombre de liens considérés positifs par le modèle (Corrects + Faux) et le pourcentage de manqués sur le total de liens positifs réels (13547).
+La prédiction est faite sur les données de \textbf{latitude}, \textbf{longitude},  et \textbf{pays} de chaque nœud.\newline
+\newline
+Les liens en noir sont les liens correctement prédis.\newline
+Les liens en rouge sont les liens faussement prédis.\newline
+Les liens en vert sont les liens manqués.
+
+\subsection{Résultats}
+\subsubsection{GAE sans notre décodeur}
+
+\begin{table}
+    \centering
+    \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+        Statistiques scores & Min & Max & Moyenne & Écart type & Seuil\\
+        \hline
+         & 0 & 1 & 0.75929 & 0.42746 & 1 \\
+         \hline
+    \end{tabular}
+    \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+        Résultats & Total & Corrects & Faux & Manqués & Rejetés\\
+        \hline
+         & 27093 & 13298 & 7257 & 249 & 6538\\
+        \hline
+         &  & 64.7\% & 35.3\% & 1.84\% & \\
+        \hline
+    \end{tabular}
+    \caption{Résultats pour le GAE sans notre décodeur}
+    \label{tab:my_label}
+\end{table}
+
+On voit que ce modèle n’a manqué que 2.27\% des liens réellement positifs. On observe néanmoins que ce modèle ne marque pas assez la différence entre des liens possiblement positifs et des liens certainement positifs selon lui, il est impossible de les discernés et donc le nombre de liens rejetés est plus bas que le nombre attendu. Pour obtenir un aussi bon score en liens manqués ce modèle à pour cela accepté une très large majorité des liens et donc à produit beaucoup de faux positifs.
+
+\subsubsection{VGAE sans notre décodeur}
+
+\begin{table}
+    \centering
+    \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+        Statistiques scores & Min & Max & Moyenne & Écart type & Seuil\\
+        \hline
+         & 0 & 1 & 0.71422 & 0.45044 & 1 \\
+         \hline
+    \end{tabular}
+    \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+        Résultats & Total & Corrects & Faux & Manqués & Rejetés\\
+        \hline
+         & 27093 & 13381 & 5473 & 166 & 8239\\
+        \hline
+         &  & 71.0\% & 29.0\% & 1.23\% & \\
+        \hline
+    \end{tabular}
+    \caption{Résultats pour le VGAE sans notre décodeur}
+    \label{tab:my_label}
+\end{table}
+Tout comme le modèle précédent celui-ci à une difficulté à différencier des liens certainement positifs de liens possiblement positifs.
+
+\subsubsection{GAE avec notre décodeur}
+
+\begin{table}
+    \centering
+    \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+        Statistiques scores & Min & Max & Moyenne & Écart type & Seuil\\
+        \hline
+         & 0 & 0.99980 & 0.49157 & 0.39727 & 0.54739 \\
+         \hline
+    \end{tabular}
+    \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+        Résultats & Total & Corrects & Faux & Manqués & Rejetés\\
+        \hline
+         & 27093 & 11804 & 1743 & 1743 & 13546\\
+        \hline
+         &  & 87.1\% & 12.9\% & 12.9\% & \\
+        \hline
+    \end{tabular}
+    \caption{Résultats pour le GAE avec notre décodeur}
+    \label{tab:my_label}
+\end{table}
+
+\subsubsection{VGAE avec notre décodeur}
+
+\begin{table}
+    \centering
+    \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+        Statistiques scores & Min & Max & Moyenne & Écart type & Seuil\\
+        \hline
+         & 0 & 1 & 0.56486 & 0.42113 & 0.75337 \\
+         \hline
+    \end{tabular}
+    \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+        Résultats & Total & Corrects & Faux & Manqués & Rejetés\\
+        \hline
+         & 27093 & 12199 & 1348 & 1348 & 13546\\
+        \hline
+         &  & 90.0\% & 10\% & 10\% & \\
+        \hline
+    \end{tabular}
+    \caption{Résultats pour le VGAE avec notre décodeur}
+    \label{tab:my_label}
+\end{table}
+
+\subsection{Résultats bis}
+Lors de nos tests, nous avons exploré l'incorporation des degrés de chaque nœud pour la prédiction de liens. Les degrés de chaque nœud sont connus puisque nous disposons déjà du graphe réel. Cependant, dans le cas de l'ajout d'un nouvel aéroport à la base de données, il est envisageable d'estimer le degré potentiel de son nœud associé en se basant sur les flux entrants et sortants des avions de cet aéroport.
+
+\subsubsection{GAE sans notre décodeur}
+
+\begin{table}
+    \centering
+    \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+        Statistiques scores & Min & Max & Moyenne & Écart type & Seuil\\
+        \hline
+         & 0 & 1 & 0.73815 & 0.43963 & 1 \\
+         \hline
+    \end{tabular}
+    \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+        Résultats & Total & Corrects & Faux & Manqués & Rejetés\\
+        \hline
+         & 27093 & 13239 & 6745 & 308 & 6797\\
+        \hline
+         &  & 66.2\% & 33.8\% & 2.27\% & \\
+        \hline
+    \end{tabular}
+    \caption{Résultats pour le GAE sans notre décodeur}
+    \label{tab:my_label}
+\end{table}
+
+\subsubsection{VGAE sans notre décodeur}
+
+\begin{table}
+    \centering
+    \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+        Statistiques scores & Min & Max & Moyenne & Écart type & Seuil\\
+        \hline
+         & 0 & 1 & 0.75625 & 0.41074 & 1 \\
+         \hline
+    \end{tabular}
+    \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+        Résultats & Total & Corrects & Faux & Manqués & Rejetés\\
+        \hline
+         & 27093 & 11665 & 3995 & 1882 & 11427\\
+        \hline
+         &  & 74.5\% & 25.5\% & 13.9\% & \\
+        \hline
+    \end{tabular}
+    \caption{Résultats pour le VGAE sans notre décodeur}
+    \label{tab:my_label}
+\end{table}
+
+\subsubsection{GAE avec notre décodeur}
+
+\begin{table}
+    \centering
+    \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+        Statistiques scores & Min & Max & Moyenne & Écart type & Seuil\\
+        \hline
+         & 0 & 1 & 0.49266 & 0.45323 & 0.5414 \\
+         \hline
+    \end{tabular}
+    \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+        Résultats & Total & Corrects & Faux & Manqués & Rejetés\\
+        \hline
+         & 27093 & 12695 & 852 & 852 & 12695\\
+        \hline
+         &  & 93.7\% & 6.3\% & 6.3\% & \\
+        \hline
+    \end{tabular}
+    \caption{Résultats pour le GAE avec notre décodeur}
+    \label{tab:my_label}
+\end{table}
+
+\subsubsection{VGAE avec notre décodeur}
+
+\begin{table}
+    \centering
+    \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+        Statistiques scores & Min & Max & Moyenne & Écart type & Seuil\\
+        \hline
+         & 0 & 1 & 0.51289 & 0.43108 & 0.5917 \\
+         \hline
+    \end{tabular}
+    \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+        Résultats & Total & Corrects & Faux & Manqués & Rejetés\\
+        \hline
+         & 27093 & 12535 & 1011 & 1012 & 13547\\
+        \hline
+         &  & 92.5\% & 7.5\% & 7.5\% & \\
+        \hline
+    \end{tabular}
+    \caption{Résultats pour le VGAE avec notre décodeur}
+    \label{tab:my_label}
+\end{table}
 
 
 \section{Étude du dropout}
