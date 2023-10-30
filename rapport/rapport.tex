@@ -1,16 +1,17 @@
-\documentclass{article} 
+\documentclass{article}
 
 \usepackage{amsmath,amsthm}     
 \usepackage{graphicx}     
 \usepackage{hyperref} 
 \usepackage{url}
 \usepackage{amsfonts} 
-\usepackage[margin=0.7in]{geometry}
+\usepackage[margin=1in]{geometry}
 \usepackage{float}
 \usepackage{multicol, multirow}
 \usepackage{arydshln}
 \usepackage{subcaption}
 \usepackage[french]{babel}
+\usepackage{adjustbox}
 
 
 
@@ -23,6 +24,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{document}
 
+\renewcommand{\arraystretch}{1.5}
 
 \title{BIML GNN : Prédiction de lien \\
 \footnotesize{VGAE et autre joyeusetés}}
@@ -67,21 +69,24 @@ En effet en regardant les courbes de la figure \ref{fig:dropout} on remarque que
 Pour la suite des tentatives on ne conserverat donc pas le dropout.
 
 \begin{table}[H]
-    \centering
     \captionsetup{justification=centering}
-    \begin{tabular}{|c|*{2}{c:c:c|}} 
-        \hline
-        \multirow{2}{*}{modèle} &\multicolumn{3}{|c|}{Sans Degrée} & \multicolumn{3}{|c|}{Avec Degrée} \\
-        \cline{2-7}
-        & \footnotesize{AUC} & \footnotesize{AP} & \footnotesize{temps} &\footnotesize{AUC} & \footnotesize{AP} & \footnotesize{temps} \\
-        \hline
-        VGAE              & \textbf{.823}(\textbf{.015}) & \textbf{75.6\%}(2.2\%) & \textbf{107.8s}(\textbf{4.9s}) & .830(.023) & 75.5\%(2.8\%) & 110.9s(6.2s)\\
-        VGAE with dropout & .785(.017)                   & 70.6\%(\textbf{1.9\%}) & 109.3s(5.3s) & .781(.021)      & 70.0\%(2.6\%) & 112.0s(9.345)\\
-        \hline
-    \end{tabular}
+    \adjustbox{center}{
+        \begin{tabular}{|c|*{2}{c:c:c|}} 
+            \hline
+            \multirow{2}{*}{modèle} &\multicolumn{3}{|c|}{Sans Degrée} & \multicolumn{3}{|c|}{Avec Degrée} \\
+            \cline{2-7}
+            & \footnotesize{AUC} & \footnotesize{AP} & \footnotesize{temps} &\footnotesize{AUC} & \footnotesize{AP} & \footnotesize{temps} \\
+            \hline
+            VGAE              & \textbf{.823}(\textbf{.015}) & \textbf{75.6\%}(2.2\%) & \textbf{107.8s}(\textbf{4.9s}) & .830(.023) & 75.5\%(2.8\%) & 110.9s(6.2s)\\
+            VGAE avec dropout & .785(.017)                   & 70.6\%(\textbf{1.9\%}) & 109.3s(5.3s) & .781(.021)      & 70.0\%(2.6\%) & 112.0s(9.345)\\
+            \hline
+        \end{tabular}
+    }
     \caption{Résultats de l'utilisation du dropout. \\ \footnotesize Dans chaque case est indiqué la moyenne et l'écart-type au format : moyenne(écart-type)}
     \label{tab:dropout}
 \end{table}
+
+
 \begin{figure}[H]
     \centering
     \captionsetup{justification=centering}
@@ -120,8 +125,25 @@ Les modèles ont été entraîné sur 2000 epochs.
 Ce processus a été répété 60 fois pour obtenir des statistiques sur l'apprentissage.
 Le processus a été réalisé à la fois dans la situation ou le degré est inconnu et dans la situation ou il est connu.
 
-\subsection{Performance}
-
+\begin{table}[H]
+    \captionsetup{justification=centering}
+    \adjustbox{center}{
+        \begin{tabular}{|c|*{2}{c:c:c|}} 
+            \hline
+            \multirow{2}{*}{modèle} &\multicolumn{3}{|c|}{Sans Degrée} & \multicolumn{3}{|c|}{Avec Degrée} \\
+            \cline{2-7}
+            & \footnotesize{AUC} & \footnotesize{AP} & \footnotesize{temps} &\footnotesize{AUC} & \footnotesize{AP} & \footnotesize{temps} \\
+            \hline
+            GAE              & \textbf{.823}(\textbf{.015}) & \textbf{75.6\%}(2.2\%) & \textbf{107.8s}(\textbf{4.9s}) & .830(.023) & 75.5\%(2.8\%) & 110.9s(6.2s)\\
+            GAE avec décodeur & .785(.017)                   & 70.6\%(\textbf{1.9\%}) & 109.3s(5.3s) & .781(.021)      & 70.0\%(2.6\%) & 112.0s(9.345)\\
+            VGAE              & \textbf{.823}(\textbf{.015}) & \textbf{75.6\%}(2.2\%) & \textbf{107.8s}(\textbf{4.9s}) & .830(.023) & 75.5\%(2.8\%) & 110.9s(6.2s)\\
+            VGAE avec décodeur & .785(.017)                   & 70.6\%(\textbf{1.9\%}) & 109.3s(5.3s) & .781(.021)      & 70.0\%(2.6\%) & 112.0s(9.345)\\
+            \hline
+        \end{tabular}
+    }
+    \caption{Résultats de l'utilisation du dropout. \\ \footnotesize Dans chaque case est indiqué la moyenne et l'écart-type au format : moyenne(écart-type)}
+    \label{tab:dropout}
+\end{table}
 
 \begin{table}[H]
     \centering
