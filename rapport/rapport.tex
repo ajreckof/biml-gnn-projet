@@ -55,6 +55,8 @@ Les degrés des nœuds sont déterminés en utilisant notre connaissance du grap
 
 
 \section{Étude du dropout}
+\label{sec:dropout}
+\subsection{Méthode}
 Nous avons essayé d'améliorer le modèle VGAE en y incorporant une couche de dropout entre la première et la deuxième couche. 
 Nous avons laissé la valeur de dropout à la valeur par défaut soit 0.5. 
 Les modèles ont été entraîné sur 2000 epochs. 
@@ -73,12 +75,12 @@ Pour la suite des tentatives on ne conserverat donc pas le dropout.
     \adjustbox{center}{
         \begin{tabular}{|c|*{2}{c:c:c|}} 
             \hline
-            \multirow{2}{*}{modèle} &\multicolumn{3}{|c|}{Sans Degrée} & \multicolumn{3}{|c|}{Avec Degrée} \\
+            \multirow{2}{*}{modèle} &\multicolumn{3}{|c|}{Avec Degrée} & \multicolumn{3}{|c|}{Sans Degrée} \\
             \cline{2-7}
             & \footnotesize{AUC} & \footnotesize{AP} & \footnotesize{temps} &\footnotesize{AUC} & \footnotesize{AP} & \footnotesize{temps} \\
             \hline
-            VGAE              & \textbf{.823}(\textbf{.015}) & \textbf{75.6\%}(2.2\%) & \textbf{107.8s}(\textbf{4.9s}) & .830(.023) & 75.5\%(2.8\%) & 110.9s(6.2s)\\
-            VGAE avec dropout & .785(.017)                   & 70.6\%(\textbf{1.9\%}) & 109.3s(5.3s) & .781(.021)      & 70.0\%(2.6\%) & 112.0s(9.345)\\
+            VGAE              & \textbf{.823}(\textbf{.015}) & \textbf{75.6\%}(2.2\%) & \textbf{107.8s}(\textbf{4.9s}) & \textbf{.830}(.023)     & \textbf{75.5\%}(2.8\%) & \textbf{110.9s}(\textbf{6.2s})\\
+            VGAE avec dropout & .785(.017)                   & 70.6\%(\textbf{1.9\%}) & 109.3s(5.3s)                   & .781(\textbf{.021})     & 70.0\%(\textbf{2.6\%}) & 112.0s(9.345)\\
             \hline
         \end{tabular}
     }
@@ -86,34 +88,6 @@ Pour la suite des tentatives on ne conserverat donc pas le dropout.
     \label{tab:dropout}
 \end{table}
 
-
-\begin{figure}[H]
-    \centering
-    \captionsetup{justification=centering}
-    \begin{subfigure}{0.45\textwidth}
-      \includegraphics[width=\textwidth]{graphics/APs_degree_dropout_cinf.svg.pdf}
-      \centering
-      \caption{précision moyenne au cours de l'apprentissage\\ avec l'information de degrée}
-    \end{subfigure}
-    \begin{subfigure}{0.45\textwidth}
-      \includegraphics[width=\textwidth]{graphics/APs_no_degree_dropout_cinf.svg.pdf}
-      \centering
-      \caption{précision moyenne au cours de l'apprentissage\\ sans l'information de degrée}
-    \end{subfigure}
-    
-    \begin{subfigure}{0.45\textwidth}
-      \includegraphics[width=\textwidth]{graphics/AUCs_degree_dropout_cinf.svg.pdf}
-      \centering
-      \caption{AUC ROC au cours de l'apprentissage\\ avec l'information de degrée}
-    \end{subfigure}
-    \begin{subfigure}{0.45\textwidth}
-      \includegraphics[width=\textwidth]{graphics/AUCs_no_degree_dropout_cinf.svg.pdf}
-      \centering
-      \caption{AUC ROC au cours de l'apprentissage\\ sans l'information de degrée}
-    \end{subfigure}
-    \caption{Évolution de l'AUC et de la précision moyenne au cours de l'apprentissage dans les deux cas (degrée connu ou inconnu)}
-    \label{fig:dropout}
-\end{figure}
 
 \section{Performance de décodeur}
 \subsection{Méthode}
@@ -125,65 +99,31 @@ Les modèles ont été entraîné sur 2000 epochs.
 Ce processus a été répété 60 fois pour obtenir des statistiques sur l'apprentissage.
 Le processus a été réalisé à la fois dans la situation ou le degré est inconnu et dans la situation ou il est connu.
 
+\subsection{Résultat}
+Les résultats au bout des 2000 epochs ont été compilé dans le tableau \ref{tab:decoder}.
+L'évolution au cour de l'apprentissage de l'AUC et la précision moyenne ont elle été représenté sur la figure \ref{fig:decoder}.
+
 \begin{table}[H]
     \captionsetup{justification=centering}
     \adjustbox{center}{
         \begin{tabular}{|c|*{2}{c:c:c|}} 
             \hline
-            \multirow{2}{*}{modèle} &\multicolumn{3}{|c|}{Sans Degrée} & \multicolumn{3}{|c|}{Avec Degrée} \\
+            \multirow{2}{*}{modèle} &\multicolumn{3}{|c|}{Avec Degrée} & \multicolumn{3}{|c|}{Sans Degrée} \\
             \cline{2-7}
             & \footnotesize{AUC} & \footnotesize{AP} & \footnotesize{temps} &\footnotesize{AUC} & \footnotesize{AP} & \footnotesize{temps} \\
             \hline
-            GAE              & \textbf{.823}(\textbf{.015}) & \textbf{75.6\%}(2.2\%) & \textbf{107.8s}(\textbf{4.9s}) & .830(.023) & 75.5\%(2.8\%) & 110.9s(6.2s)\\
-            GAE avec décodeur & .785(.017)                   & 70.6\%(\textbf{1.9\%}) & 109.3s(5.3s) & .781(.021)      & 70.0\%(2.6\%) & 112.0s(9.345)\\
-            VGAE              & \textbf{.823}(\textbf{.015}) & \textbf{75.6\%}(2.2\%) & \textbf{107.8s}(\textbf{4.9s}) & .830(.023) & 75.5\%(2.8\%) & 110.9s(6.2s)\\
-            VGAE avec décodeur & .785(.017)                   & 70.6\%(\textbf{1.9\%}) & 109.3s(5.3s) & .781(.021)      & 70.0\%(2.6\%) & 112.0s(9.345)\\
+            VGAE avec décodeur & \textbf{.960}(.047) & \textbf{95.8\%}(5.2\%) & 118.4s(6.4s)                   & \textbf{.955}(.061) & \textbf{94.9\%}(7.0\%) & 122.8s(7.2s)\\
+            VGAE               & .823(\textbf{.015}) & 75.6\%(\textbf{2.2\%}) & \textbf{107.8s}(\textbf{4.9s}) & .830(\textbf{.023}) & 75.5\%(\textbf{2.8\%}) & \textbf{110.9s}(\textbf{6.2s})\\
             \hline
         \end{tabular}
     }
-    \caption{Résultats de l'utilisation du dropout. \\ \footnotesize Dans chaque case est indiqué la moyenne et l'écart-type au format : moyenne(écart-type)}
-    \label{tab:dropout}
+    \caption{Résultats de l'utilisation d'un décodeur. \\ \footnotesize Dans chaque case est indiqué la moyenne et l'écart-type au format : moyenne(écart-type)}
+    \label{tab:decoder}
 \end{table}
 
-\begin{table}[H]
-    \centering
-    \begin{tabular}{|c|c|c|}
-        \hline
-        Modèle & AUC & AP\\
-        \hline
-        GAE & 0.72 & 0.64\\
-        \hline
-        GAE avec décodeur & 0.94 & 0.93\\
-        \hline
-        VGAE & 0.83 & 0.75\\
-        \hline
-        VGAE avec décodeur & 0.97 & 0.96\\
-        \hline
-    \end{tabular}
-    \caption{Performance du décodeur en moyenne sur 10 au bout de 1000 époques. voir figure \ref{fig:fig_AUC} et \ref{fig:fig_AP}}
-    \label{tab:performance_decodeur}
-\end{table}
-
-\subsection{Performance avec le degré}
-
-\begin{table}[H]
-    \centering
-    \begin{tabular}{|c|c|c|}
-        \hline
-        Modèle & AUC & AP\\
-        \hline
-        GAE & 0.74 & 0.66\\
-        \hline
-        GAE avec décodeur & 0.97 & 0.97\\
-        \hline
-        VGAE & 0.78 & 0.70\\
-        \hline
-        VGAE avec décodeur & 0.97 & 0.96\\
-        \hline
-    \end{tabular}
-    \caption{Performance du décodeur en moyenne sur 10 au bout de 1000 époques avec le degré de chaque nœud. voir figure\ref{fig:fig_AUC_avec_degre} et \ref{fig:fig_AP_avec_degre}}
-    \label{tab:performance_decodeur_avec_degre}
-\end{table}
+\section{Étude du dropout en présence du décodeur}
+\subsection{Méthode}
+On réutilise la couche de dropout introduit en \ref{sec:dropout} et on la teste sur le vgae avec décodeur voir si ca ne permettrais pas de réduire l'écart-type sans perdre trop en performance. 
 
 \section{Reconstruction de graphe}
 \subsection{Méthode}
@@ -283,6 +223,61 @@ Nous pouvons constater que tous les modèles obtiennent de meilleures performanc
 \section{Annexes}
 
 \subsection{Performance}
+\begin{figure}[H]
+    \centering
+    \captionsetup{justification=centering}
+    \begin{subfigure}{0.45\textwidth}
+      \includegraphics[width=\textwidth]{graphics/APs_degree_dropout_cinf.svg.pdf}
+      \centering
+      \caption{précision moyenne au cours de l'apprentissage\\ avec l'information de degrée}
+    \end{subfigure}
+    \begin{subfigure}{0.45\textwidth}
+      \includegraphics[width=\textwidth]{graphics/APs_no_degree_dropout_cinf.svg.pdf}
+      \centering
+      \caption{précision moyenne au cours de l'apprentissage\\ sans l'information de degrée}
+    \end{subfigure}
+    
+    \begin{subfigure}{0.45\textwidth}
+      \includegraphics[width=\textwidth]{graphics/AUCs_degree_dropout_cinf.svg.pdf}
+      \centering
+      \caption{AUC ROC au cours de l'apprentissage\\ avec l'information de degrée}
+    \end{subfigure}
+    \begin{subfigure}{0.45\textwidth}
+      \includegraphics[width=\textwidth]{graphics/AUCs_no_degree_dropout_cinf.svg.pdf}
+      \centering
+      \caption{AUC ROC au cours de l'apprentissage\\ sans l'information de degrée}
+    \end{subfigure}
+    \caption{Évolution de l'AUC et de la précision moyenne au cours de l'apprentissage dans les deux cas (degrée connu ou inconnu)}
+    \label{fig:dropout}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \captionsetup{justification=centering}
+    \begin{subfigure}{0.45\textwidth}
+      \includegraphics[width=\textwidth]{graphics/APs_degree_decoder_cinf.svg.pdf}
+      \centering
+      \caption{précision moyenne au cours de l'apprentissage\\ avec l'information de degrée}
+    \end{subfigure}
+    \begin{subfigure}{0.45\textwidth}
+      \includegraphics[width=\textwidth]{graphics/APs_no_degree_decoder_cinf.svg.pdf}
+      \centering
+      \caption{précision moyenne au cours de l'apprentissage\\ sans l'information de degrée}
+    \end{subfigure}
+    
+    \begin{subfigure}{0.45\textwidth}
+      \includegraphics[width=\textwidth]{graphics/AUCs_degree_decoder_cinf.svg.pdf}
+      \centering
+      \caption{AUC ROC au cours de l'apprentissage\\ avec l'information de degrée}
+    \end{subfigure}
+    \begin{subfigure}{0.45\textwidth}
+      \includegraphics[width=\textwidth]{graphics/AUCs_no_degree_decoder_cinf.svg.pdf}
+      \centering
+      \caption{AUC ROC au cours de l'apprentissage\\ sans l'information de degrée}
+    \end{subfigure}
+    \caption{Évolution de l'AUC et de la précision moyenne au cours de l'apprentissage dans les deux cas (degrée connu ou inconnu) entre VGAE simple et VGAE avec dropout}
+    \label{fig:decoder}
+\end{figure}
+
 \begin{figure}[H]
     \centering
     \includegraphics[width=1\linewidth]{../test_performance/sans_degre_0dropout/AUC.png}
