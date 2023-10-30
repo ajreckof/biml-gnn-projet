@@ -17,7 +17,6 @@ from multiprocessing import Pool
 import signal
 from tqdm import tqdm
 from IPython.display import clear_output
-
 AUCs,APs = {},{}
 
 # device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
@@ -95,7 +94,6 @@ def loop_func(entries):
 	dt.test_pos_edge_index = test_data.pos_edge_label_index
 	dt.test_neg_edge_index = test_data.neg_edge_label_index
 
-	dt.num_classes = len(set(data.country))
 	for model_val in models:
 		is_vgae_dropout, decoder, encoder_out = model_val
 		is_vgae, dropout = is_vgae_dropout
@@ -167,90 +165,72 @@ def test_dropout(file_path, data, models, epochs, n = 10, test_interval= 10, ave
 	return AUCs, APs
 
 
-def draw_AUCs_APs(AUCs,APs, average_on, test_interval, values = None):
+def draw_AUCs_or_APs(AUCs, average_on, test_interval, values = None, revlog = False, percentiles_base = [0.1, 1, 5, 10, 25, 33, 40,45], output = "output"):
 	if values == None :
 		values = list(AUCs.keys())
-	mean_AUC, mean_AP = {}, {}
-	median_AUC, median_AP = {}, {}
-	std_AUC, std_AP = {}, {}
-	percentiles_AUC, percentiles_AP = {}, {}
+	mean = {}
+	median = {}
+	std = {}
+	percentiles_dict = {}
 	
 	def floating_average(list):
 		return [ sum(list[max(0,i+1-average_on):i+1])/ min(i+1,average_on) for i in range(len(list))]
 	
-	percentiles_base = [5, 10, 25, 33, 40,45]
 	percentiles = percentiles_base + [ 100 - x for x in reversed(percentiles_base)]
 
-
+	if revlog:
+		f= lambda x : 1-x
+	else : 
+		f= lambda x: x
 
 	for dropout in values :
-		mean_AUC[dropout] = floating_average([ np.mean(x)  for x in zip(*AUCs[dropout])])
-		mean_AP[dropout] = floating_average([ np.mean(x)  for x in zip(*APs[dropout])])
-		std_AUC[dropout] = floating_average([ np.std(x) for x in zip(*AUCs[dropout])])
-		std_AP[dropout] = floating_average([ np.std(x)  for x in zip(*APs[dropout])])
-		percentiles_AUC[dropout] = [floating_average(x) for x in zip(*[np.percentile(x, percentiles) for x in zip(*AUCs[dropout])])]
-		percentiles_AP[dropout] = [floating_average(x) for x in zip(*[np.percentile(x, percentiles) for x in zip(*APs[dropout])])]
-		median_AUC[dropout] = floating_average([ np.median(x)  for x in zip(*AUCs[dropout])])
-		median_AP[dropout] = floating_average([ np.median(x)  for x in zip(*APs[dropout])])
-
-	
-	
-	fig = plt.figure(figsize = (15,22))
-	ax1 = fig.add_subplot(3,2,1)
-	ax1.grid(visible= True, which='both')
-	ax1.set_xlabel("epoch")
-	ax1.set_ylabel("AUC")
-
-	ax2 = fig.add_subplot(3,2,2)
-	ax2.grid(visible= True, which='both')
-	ax2.set_xlabel("epoch")
-	ax2.set_ylabel("AP")
-	
-	ax3 = fig.add_subplot(3,2,3)
-	ax3.grid(visible= True, which='both')
-	ax3.set_xlabel("epoch")
-	ax3.set_ylabel("AUC")
-
-	ax4 = fig.add_subplot(3,2,4)
-	ax4.grid(visible= True, which='both')
-	ax4.set_xlabel("epoch")
-	ax4.set_ylabel("AP")
-
-	ax5 = fig.add_subplot(3,2,5)
-	ax5.grid(visible= True, which='both')
-	ax5.set_xlabel("epoch")
-	ax5.set_ylabel("AUC")
-
-	ax6 = fig.add_subplot(3,2,6)
-	ax6.grid(visible= True, which='both')
-	ax6.set_xlabel("epoch")
-	ax6.set_ylabel("AP")
+		mean[dropout] = floating_average([ f(np.mean(x))  for x in zip(*AUCs[dropout])])
+		std[dropout] = floating_average([ np.std(x) for x in zip(*AUCs[dropout])])
+		percentiles_dict[dropout] = [floating_average([f(y) for y in x]) for x in zip(*[np.percentile(x, percentiles) for x in zip(*AUCs[dropout])])]
+		median[dropout] = floating_average([ f(np.median(x))  for x in zip(*AUCs[dropout])])
 
 	val = np.linspace(0, 1, len(AUCs))
 	cmap = plt.get_cmap('rainbow')  
 	color_list = [cmap(value) for value in val]
 	colors = {dropout : color for dropout,color in zip(AUCs.keys(),color_list)}
-
-	for dropout in values :
-		ax1.plot(np.arange(len(mean_AUC[dropout])) * test_interval, mean_AUC[dropout], label = dropout, color = colors[dropout])
-		ax2.plot(np.arange(len(mean_AP[dropout])) * test_interval, mean_AP[dropout], label = dropout, color = colors[dropout])
-		ax3.plot(np.arange(len(std_AUC[dropout])) * test_interval, std_AUC[dropout], label = dropout, color = colors[dropout])
-		ax4.plot(np.arange(len(std_AP[dropout])) * test_interval, std_AP[dropout], label = dropout, color = colors[dropout])
-		ax5.plot(np.arange(len(median_AUC[dropout])) * test_interval, median_AUC[dropout], label = dropout, color = colors[dropout])
-		ax6.plot(np.arange(len(median_AP[dropout])) * test_interval, median_AP[dropout], label = dropout, color = colors[dropout])
-		for i in range(len(percentiles_base)) : 
-			ax5.fill_between(np.arange(len(mean_AUC[dropout])) * test_interval, percentiles_AUC[dropout][i], percentiles_AUC[dropout][-i-1], color = colors[dropout], alpha = 0.1)
-			ax6.fill_between(np.arange(len(mean_AP[dropout])) * test_interval, percentiles_AP[dropout][i], percentiles_AP[dropout][-i-1], color = colors[dropout], alpha = 0.1)
-
-
-
 	
-	ax1.legend(loc='upper left')
-	ax2.legend(loc='upper left')    
-	ax3.legend(loc='upper left')
-	ax4.legend(loc='upper left')
-	ax5.legend(loc='upper left')
-	ax6.legend(loc='upper left')
-	print("start plotting")
-	plt.savefig("output.svg.pdf")
+	fig = plt.figure(figsize = (15,22))
+	ax = fig.add_subplot(3,2,1)
+	ax.grid(visible= True, which='both')
+	ax.set_xlabel("epoch")
+	ax.set_ylabel("moyenne")
+	for dropout in values :
+		ax.plot(np.arange(len(mean[dropout])) * test_interval, mean[dropout], label = dropout, color = colors[dropout])
+	if revlog :
+		ax.set_yscale('log')
+	ax.legend(loc='upper left')
+	plt.savefig(f"output/{output}_mean.svg.pdf", bbox_inches='tight')
+
+	fig = plt.figure(figsize = (15,22))
+	ax = fig.add_subplot(3,2,1)
+	ax.grid(visible= True, which='both')
+	ax.set_xlabel("epoch")
+	ax.set_ylabel("écart-type")
+	for dropout in values :
+		ax.plot(np.arange(len(std[dropout])) * test_interval, std[dropout], label = dropout, color = colors[dropout])
+	if revlog :
+		ax.set_yscale('log')
+	ax.legend(loc='upper left')
+	plt.savefig(f"output/{output}_std.svg.pdf", bbox_inches='tight')
+	
+	
+	fig = plt.figure(figsize = (15,22))
+	ax = fig.add_subplot(3,2,1)
+	ax.grid(visible= True, which='both')
+	ax.set_xlabel("epoch")
+	ax.set_ylabel("médiane")
+	for dropout in values :
+		ax.plot(np.arange(len(median[dropout])) * test_interval, median[dropout], label = dropout, color = colors[dropout])
+		for i in range(len(percentiles_base)) : 
+			ax.fill_between(np.arange(len(median[dropout])) * test_interval, percentiles_dict[dropout][i], percentiles_dict[dropout][-i-1], color = colors[dropout], alpha = 0.1)
+	if revlog :
+		ax.set_yscale('log')
+	ax.legend(loc='upper left')
+	plt.savefig(f"output/{output}_cinf.svg.pdf", bbox_inches='tight')
+
 	plt.show()
