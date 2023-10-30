@@ -10,6 +10,7 @@
 \usepackage{multicol, multirow}
 \usepackage{arydshln}
 \usepackage{subcaption}
+\usepackage[french]{babel}
 
 
 
@@ -23,7 +24,8 @@
 \begin{document}
 
 
-\title{Biml GNN (trouver un nom)}
+\title{BIML GNN : Prédiction de lien \\
+\footnotesize{VGAE et autre joyeusetés}}
 \author{Bonhoure Timothé, Martinez Christophe}                      %%%% your final manuscript.
 
 \maketitle
@@ -53,22 +55,34 @@ Les degrés des nœuds sont déterminés en utilisant notre connaissance du grap
 \section{Étude du dropout}
 Nous avons essayé d'améliorer le modèle VGAE en y incorporant une couche de dropout entre la première et la deuxième couche. 
 Nous avons laissé la valeur de dropout à la valeur par défaut soit 0.5. 
-Les modèles ont été entrainé sur 2000 épochs. 
+Les modèles ont été entraîné sur 2000 epochs. 
 Ce processus a été répété 60 fois pour obtenir des statistiques sur l'apprentissage.
+Le processus a été réalisé à la fois dans la situation ou le degré est inconnu et dans la situation ou il est connu
 
+\subsection{Résultats}
+Les résultats au bout des 2000 epochs ont été compilé dans le tableau \ref{tab:dropout}.
+L'évolution au cour de l'apprentissage de l'AUC et la précision moyenne ont elle été représenté sur la figure \ref{fig:dropout}.
+Les résultats montre sans équivoque que la présence de cette couche réduit énormément les performances du modèles sans réduire de manière suffisante l'écart type et cela dans les deux situations.
+En effet en regardant les courbes de la figure \ref{fig:dropout} on remarque que seul les instances les plus performantes de VGAE avec du dropout arrive à dépasser la médiane des instances de VGAE sans dropout.
+Pour la suite des tentatives on ne conserverat donc pas le dropout.
 
-\begin{tabular}{|c|*{2}{c:c:c|}} 
-    \hline
-    \multirow{2}{*}{modèle} &\multicolumn{3}{|c|}{Sans Degrée} & \multicolumn{3}{|c|}{Avec Degrée} \\
-    \cline{2-7}
-    & \footnotesize{AUC} & \footnotesize{AP} & \footnotesize{temps} &\footnotesize{AUC} & \footnotesize{AP} & \footnotesize{temps} \\
-    \hline
-    VGAE              & .823(0.015) & 75.6\%(2.2\%) & 107.8s(4.9s) & .830(.023) & 75.5\%(2.8\%) & 110.9s(6.2s)\\
-    VGAE with dropout & .785(.017)  & 70.6\%(1.9\%) & 109.3s(5.3s) & .781(.021) & 70.0\%(2.6\%) & 112.0s(9.345)\\
-    \hline
-\end{tabular}
-
-\begin{figure}
+\begin{table}[H]
+    \centering
+    \captionsetup{justification=centering}
+    \begin{tabular}{|c|*{2}{c:c:c|}} 
+        \hline
+        \multirow{2}{*}{modèle} &\multicolumn{3}{|c|}{Sans Degrée} & \multicolumn{3}{|c|}{Avec Degrée} \\
+        \cline{2-7}
+        & \footnotesize{AUC} & \footnotesize{AP} & \footnotesize{temps} &\footnotesize{AUC} & \footnotesize{AP} & \footnotesize{temps} \\
+        \hline
+        VGAE              & \textbf{.823}(\textbf{.015}) & \textbf{75.6\%}(2.2\%) & \textbf{107.8s}(\textbf{4.9s}) & .830(.023) & 75.5\%(2.8\%) & 110.9s(6.2s)\\
+        VGAE with dropout & .785(.017)                   & 70.6\%(\textbf{1.9\%}) & 109.3s(5.3s) & .781(.021)      & 70.0\%(2.6\%) & 112.0s(9.345)\\
+        \hline
+    \end{tabular}
+    \caption{Résultats de l'utilisation du dropout. \\ \footnotesize Dans chaque case est indiqué la moyenne et l'écart-type au format : moyenne(écart-type)}
+    \label{tab:dropout}
+\end{table}
+\begin{figure}[H]
     \centering
     \captionsetup{justification=centering}
     \begin{subfigure}{0.45\textwidth}
@@ -92,15 +106,22 @@ Ce processus a été répété 60 fois pour obtenir des statistiques sur l'appre
       \centering
       \caption{AUC ROC au cours de l'apprentissage\\ sans l'information de degrée}
     \end{subfigure}
+    \caption{Évolution de l'AUC et de la précision moyenne au cours de l'apprentissage dans les deux cas (degrée connu ou inconnu)}
+    \label{fig:dropout}
 \end{figure}
 
 \section{Performance de décodeur}
 \subsection{Méthode}
-Nous testons notre décodeur sur ces deux modèles en comparant les performances avec et sans l'ajout du décodeur. \newline
+Pour améliorer le VGAE nous avons décidé d'entrainer en plus de l'encodeur un décodeur. 
+Le décodeur que nous avons entrainé est constitué de deux couches linéaire.
+La fonction d'activation entre les deux couches est ReLu.
+En sortie du décodeur la fonction d'activation est une sigmoîde
+Les modèles ont été entraîné sur 2000 epochs. 
+Ce processus a été répété 60 fois pour obtenir des statistiques sur l'apprentissage.
+Le processus a été réalisé à la fois dans la situation ou le degré est inconnu et dans la situation ou il est connu.
 
 \subsection{Performance}
 
-Nous effectuons les prédictions en utilisant les données de latitude, longitude et pays de chaque nœud. Les modèles sont entraînés sur 1000 époques, et ce processus est répété 10 fois pour obtenir une moyenne des performances par époque. Tous les modèles partagent des hyperparamètres équivalents : les encodeurs produisent des vecteurs de 32 valeurs. On trace ensuite l'AUC et l'AP calculées à chaque époque pour chaque modèle.
 
 \begin{table}[H]
     \centering
@@ -117,7 +138,7 @@ Nous effectuons les prédictions en utilisant les données de latitude, longitud
         VGAE avec décodeur & 0.97 & 0.96\\
         \hline
     \end{tabular}
-    \caption{Performance du décodeur en moyenne sur 10 au bout de 1000 époques \ref{fig:fig_AUC} \ref{fig:fig_AP}}
+    \caption{Performance du décodeur en moyenne sur 10 au bout de 1000 époques. voir figure \ref{fig:fig_AUC} et \ref{fig:fig_AP}}
     \label{tab:performance_decodeur}
 \end{table}
 
@@ -138,7 +159,7 @@ Nous effectuons les prédictions en utilisant les données de latitude, longitud
         VGAE avec décodeur & 0.97 & 0.96\\
         \hline
     \end{tabular}
-    \caption{Performance du décodeur en moyenne sur 10 au bout de 1000 époques avec le degré de chaque nœud \ref{fig:fig_AUC_avec_degre} \ref{fig:fig_AP_avec_degre}}
+    \caption{Performance du décodeur en moyenne sur 10 au bout de 1000 époques avec le degré de chaque nœud. voir figure\ref{fig:fig_AUC_avec_degre} et \ref{fig:fig_AP_avec_degre}}
     \label{tab:performance_decodeur_avec_degre}
 \end{table}
 
